@@ -11,6 +11,34 @@ const spells = fs.readFileSync('src/datas/spells.json', 'utf8')
 
 const riotToken = process.env.riotTokenKey;
 
+interface match {
+    gameMode: string,
+    gameType: string,
+    queueType: string,
+    gameStartTimestamp: number,
+    gameEndTimestamp: number,
+    win: boolean,
+    championName: string,
+    championNameKR: string,
+    perk1: string,
+    perk2: string,
+    spell1: string,
+    spell2: string,
+    item0: number,
+    item1: number,
+    item2: number,
+    item3: number,
+    item4: number,
+    item5: number,
+    item6: number,
+    champLevel: number,
+    totalMinionsKilled: number,
+    kills: number,
+    deaths: number,
+    assists: number,
+    kda: number,
+}
+
 class userController {
     public path = '/user';
     public router = Router();
@@ -23,7 +51,7 @@ class userController {
         this.router.patch(`${this.path}/writeReview/:userId`, this.writeReview);
 
         this.router.get(`${this.path}/userInfo/:userId`, this.userInfo);
-        // this.router.get(`${this.path}/recentRecord/:userId`, this.recentRecord);
+        this.router.get(`${this.path}/recentRecord/:userId`, this.recentRecord);
 
         // this.router.get(`${this.path}/mypage`, this.mypage);
         // this.router.get(`${this.path}/phoneNumber`, this.getPhoneNumber);
@@ -234,6 +262,148 @@ class userController {
         }
     }
 
+    private recentRecord = async (request: Request, response: Response, next: NextFunction) => {
+        const userId = request.params.userId
+        const page: any = request.query.page
+        const size = 5
+
+        try {
+            const currentUser: any = await User.findOne({ _id: userId })
+            const lolNickname = currentUser.lolNickname
+
+            const summoner = await axios({
+                method: 'GET',
+                url: encodeURI(
+                    `https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-name/${lolNickname}`
+                ),
+                headers: {
+                    'X-Riot-Token': riotToken,
+                },
+            })
+
+            const matchList = await axios({
+                method: 'GET',
+                url: encodeURI(
+                    `https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/${summoner.data.puuid}/ids?start=0&count=100`
+                ),
+                headers: {
+                    'X-Riot-Token': riotToken,
+                },
+            })
+
+            let recentRecord = []
+
+            if (matchList.data.length !== 0) {
+                for (let i = (page - 1) * size; i < size * page; i++) {
+                    let data: match = {
+                        gameMode: '',
+                        gameType: '',
+                        queueType: '',
+                        gameStartTimestamp: 0,
+                        gameEndTimestamp: 0,
+                        win: true,
+                        championName: '',
+                        championNameKR: '',
+                        perk1: '',
+                        perk2: '',
+                        spell1: '',
+                        spell2: '',
+                        item0: 0,
+                        item1: 0,
+                        item2: 0,
+                        item3: 0,
+                        item4: 0,
+                        item5: 0,
+                        item6: 0,
+                        champLevel: 0,
+                        totalMinionsKilled: 0,
+                        kills: 0,
+                        deaths: 0,
+                        assists: 0,
+                        kda: 0,
+                    }
+
+                    const match = await axios({
+                        method: 'GET',
+                        url: encodeURI(
+                            `https://asia.api.riotgames.com/lol/match/v5/matches/${matchList.data[i]}`
+                        ),
+                        headers: {
+                            'X-Riot-Token': riotToken,
+                        },
+                    })
+
+                    const myData = match.data.info.participants.filter(
+                        (x: any) => x.puuid == summoner.data.puuid
+                    )
+
+                    data.gameMode = match.data.info.gameMode
+                    data.gameType = match.data.info.gameType
+                    data.queueType = JSON.parse(queueTypes).find(
+                        (x: any) => x.queueId === match.data.info.queueId
+                    ).description
+                    data.gameStartTimestamp = match.data.info.gameStartTimestamp
+                    data.gameEndTimestamp = match.data.info.gameEndTimestamp
+                    data.win = myData[0].win
+                    const champion = JSON.parse(chapmions).find(
+                        (x: any) => x.key == myData[0].championId
+                    )
+                    data.championName = champion.id
+                    data.championNameKR = champion.name
+                    const primaryStyle = JSON.parse(perks).find(
+                        (x: any) => x.id === myData[0].perks.styles[0].style
+                    )
+                    data.perk1 = primaryStyle.slots[0].runes.find(
+                        (x: any) => x.id === myData[0].perks.styles[0].selections[0].perk
+                    ).icon
+                    data.perk2 = JSON.parse(perks).find(
+                        (x: any) => x.id === myData[0].perks.styles[1].style
+                    ).icon
+                    data.spell1 = JSON.parse(spells).find(
+                        (x: any) => x.key == myData[0].summoner1Id
+                    ).id
+                    data.spell2 = JSON.parse(spells).find(
+                        (x: any) => x.key == myData[0].summoner2Id
+                    ).id
+                    data.item0 = myData[0].item0
+                    data.item1 = myData[0].item1
+                    data.item2 = myData[0].item2
+                    data.item3 = myData[0].item3
+                    data.item4 = myData[0].item4
+                    data.item5 = myData[0].item5
+                    data.item6 = myData[0].item6
+                    data.champLevel = myData[0].champLevel
+                    data.totalMinionsKilled =
+                        myData[0].totalMinionsKilled +
+                        myData[0].neutralMinionsKilled
+                    data.kills = myData[0].kills
+                    data.deaths = myData[0].deaths
+                    data.assists = myData[0].assists
+                    if (myData[0].deaths == 0) {
+                        if (myData[0].kills + myData[0].assists == 0) {
+                            data.kda = 0
+                        } else {
+                            data.kda = -1 // Infinity
+                        }
+                    } else {
+                        data.kda =
+                            (myData[0].kills + myData[0].assists) / myData[0].deaths
+                    }
+
+                    recentRecord.push(data)
+                }
+            }
+
+            response.status(200).json({
+                recentRecord,
+            })
+        } catch (error) {
+            console.log(error)
+            response.json({
+                message: '최근전적 불러오기에 실패하였습니다.',
+            })
+        }
+    }
 
 }
 
