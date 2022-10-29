@@ -53,7 +53,7 @@ class userController {
         this.router.get(`${this.path}/userInfo/:userId`, this.userInfo);
         this.router.get(`${this.path}/recentRecord/:userId`, this.recentRecord);
 
-        // this.router.get(`${this.path}/mypage`, this.mypage);
+        this.router.get(`${this.path}/mypage`, this.mypage);
         // this.router.get(`${this.path}/phoneNumber`, this.getPhoneNumber);
         // this.router.patch(`${this.path}/agreeSMS`, this.agreeSMS);
         // this.router.post(`${this.path}/sendSMS`, this.sendSMS);
@@ -62,6 +62,7 @@ class userController {
 
     private writeReview = async (request: Request, response: Response, next: NextFunction) => {
         const reviewedId = request.params.userId
+        // const reviewerId = response.locals.userId
         const reviewerId = '62f63bd76e6b6341b60cee01'
 
         if (!reviewerId) {
@@ -404,7 +405,70 @@ class userController {
             })
         }
     }
+    
+    private mypage = async (request: Request, response: Response, next: NextFunction) => {
+        // const userId = response.locals.userId
+        const userId = '62f63bd76e6b6341b60cee01'
+    
+        if (!userId) {
+            return response.status(401).json({
+                message: '로그인이 필요합니다.',
+            })
+        }
+    
+        let goodReview: any[] = []
+        let badReview: any[] = []
+        let registerPhone: boolean
+    
+        try {
+            const currentUser: any = await User.findOne({ _id: userId })
+            const review: any = await Review.findOne({ reviewedId: userId })
+            if (currentUser.phoneNumber) {
+                registerPhone = true
+            } else {
+                registerPhone = false
+            }
+    
+            if (review) {
+                response.status(200).json({
+                    lolNickname: currentUser.lolNickname,
+                    profileUrl: currentUser.profileUrl,
+                    tier: currentUser.tier,
+                    rank: currentUser.rank,
+                    leaguePoints: currentUser.leaguePoints,
+                    playStyle: currentUser.playStyle,
+                    position: currentUser.position,
+                    useVoice: currentUser.useVoice,
+                    goodReview: review.goodReview,
+                    badReview: review.badReview,
+                    registerPhone,
+                    agreeSMS: currentUser.agreeSMS,
+                })
+            } else {
+                response.status(200).json({
+                    lolNickname: currentUser.lolNickname,
+                    profileUrl: currentUser.profileUrl,
+                    tier: currentUser.tier,
+                    rank: currentUser.rank,
+                    leaguePoints: currentUser.leaguePoints,
+                    playStyle: currentUser.playStyle,
+                    position: currentUser.position,
+                    useVoice: currentUser.useVoice,
+                    goodReview,
+                    badReview,
+                    registerPhone,
+                    agreeSMS: currentUser.agreeSMS,
+                })
+            }
+        } catch (error) {
+            console.log(error)
+            response.json({
+                message: '내정보 불러오기에 실패하였습니다.',
+            })
+        }
+    }
 
+    
 }
 
 export default userController
