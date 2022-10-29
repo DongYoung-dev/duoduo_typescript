@@ -496,7 +496,8 @@ class userController {
 
     private agreeSMS = async (request: Request, response: Response, next: NextFunction) => {
         try {
-            const userId = response.locals.userId
+            // const userId = response.locals.userId
+            const userId = '62d2611ce44a2bec67355e05'
             const agreeSMS = request.body.agreeSMS
     
             await User.updateOne({ _id: userId }, { $set: { agreeSMS } })
@@ -511,6 +512,86 @@ class userController {
             })
         }
     }
+
+    // private sendSMS = async (request: Request, response: Response, next: NextFunction) => {
+    //     try {
+    //         // const userId = response.locals.userId
+    //         const userId = '62d2611ce44a2bec67355e05'
+    //         const opponentId = request.body.opponentId
+    
+    //         const user: any = await User.findOne({ _id: userId })
+    //         const opponent: any = await User.findOne({ _id: opponentId })
+    
+    //         if (opponent.agreeSMS === true) {
+    //             const key = process.env.CRYPTO_KEY
+    //             const decode = crypto.createDecipher('des', key)
+    //             const decodeResult =
+    //                 decode.update(opponent.phoneNumber, 'base64', 'utf8') +
+    //                 decode.final('utf8')
+    //             const date = Date.now().toString()
+    
+    //             // 환경 변수
+    //             const sens_service_id = process.env.NCP_SENS_ID
+    //             const sens_access_key = process.env.NCP_SENS_ACCESS
+    //             const sens_secret_key = process.env.NCP_SENS_SECRET
+    //             const sens_call_number = process.env.CALLER_NUMBER
+    
+    //             // url 관련 변수 선언
+    //             const method = 'POST'
+    //             const space = ' '
+    //             const newLine = '\n'
+    //             const url = `https://sens.apigw.ntruss.com/sms/v2/services/${sens_service_id}/messages`
+    //             const url2 = `/sms/v2/services/${sens_service_id}/messages`
+    
+    //             // signature 작성 : crypto-js 모듈을 이용하여 암호화
+    //             const hmac = CryptoJS.algo.HMAC.create(
+    //                 CryptoJS.algo.SHA256,
+    //                 sens_secret_key!
+    //             )
+    //             hmac.update(method)
+    //             hmac.update(space)
+    //             hmac.update(url2)
+    //             hmac.update(newLine)
+    //             hmac.update(date)
+    //             hmac.update(newLine)
+    //             hmac.update(sens_access_key!)
+    //             const hash = hmac.finalize()
+    //             const signature = hash.toString(CryptoJS.enc.Base64)
+    
+    //             const smsRes = await axios({
+    //                 method: method,
+    //                 url: url,
+    //                 headers: {
+    //                     'Contenc-type': 'application/json; charset=utf-8',
+    //                     'x-ncp-iam-access-key': sens_access_key,
+    //                     'x-ncp-apigw-timestamp': date,
+    //                     'x-ncp-apigw-signature-v2': signature,
+    //                 },
+    //                 data: {
+    //                     type: 'SMS',
+    //                     countryCode: '82',
+    //                     from: sens_call_number,
+    //                     content: `[듀오해듀오] ${opponent.lolNickname}님, ${user.lolNickname}님이 채팅을 보냈어요! \n https://duoduo.lol`,
+    //                     messages: [{ to: `${decodeResult}` }],
+    //                 },
+    //             })
+    //             console.log('response', smsRes.data)
+    
+    //             response.json({
+    //                 message: '문자를 전송했습니다.',
+    //             })
+    //         } else {
+    //             response.json({
+    //                 message: '수신동의 거부한 유저입니다.',
+    //             })
+    //         }
+    //     } catch (error) {
+    //         console.log(error)
+    //         response.json({
+    //             message: '문자 전송을 실패하였습니다.',
+    //         })
+    //     }
+    // }
 
 }
 
