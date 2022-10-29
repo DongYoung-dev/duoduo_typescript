@@ -58,7 +58,7 @@ class userController {
         // this.router.get(`${this.path}/phoneNumber`, this.getPhoneNumber);
         this.router.patch(`${this.path}/agreeSMS`, this.agreeSMS);
         // this.router.post(`${this.path}/sendSMS`, this.sendSMS);
-        // this.router.patch(`${this.path}/firstLogin`, this.firstLogin);
+        this.router.patch(`${this.path}/firstLogin`, this.firstLogin);
     }
 
     private writeReview = async (request: Request, response: Response, next: NextFunction) => {
@@ -592,6 +592,17 @@ class userController {
     //         })
     //     }
     // }
+
+    private firstLogin = async (request: Request, response: Response, next: NextFunction) => {
+        // const userId = response.locals.userId
+        const userId = '62d2611ce44a2bec67355e05'
+    
+        await User.updateOne({ _id: userId }, { $set: { firstLogin: false } })
+    
+        response.json({
+            message: '첫 로그인 false 변경.',
+        })
+    }
 
 }
 
