@@ -24,6 +24,7 @@
   "dependencies": {
     "@types/bcrypt": "^5.0.0",
     "@types/cors": "^2.8.12",
+    "@types/crypto-js": "^4.1.1",
     "@types/dotenv": "^8.2.0",
     "@types/express-session": "^1.17.5",
     "@types/passport": "^1.0.11",

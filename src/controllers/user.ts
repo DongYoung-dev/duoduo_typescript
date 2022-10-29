@@ -4,6 +4,7 @@ import Review from '../schemas/review';
 import Improvement from '../schemas/improvement';
 import axios from 'axios';
 import fs from 'fs';
+import crypto from 'crypto-js'
 const chapmions = fs.readFileSync('src/datas/champions.json', 'utf8')
 const perks = fs.readFileSync('src/datas/perks.json', 'utf8')
 const queueTypes = fs.readFileSync('src/datas/queueTypes.json', 'utf8')
@@ -55,7 +56,7 @@ class userController {
 
         this.router.get(`${this.path}/mypage`, this.mypage);
         // this.router.get(`${this.path}/phoneNumber`, this.getPhoneNumber);
-        // this.router.patch(`${this.path}/agreeSMS`, this.agreeSMS);
+        this.router.patch(`${this.path}/agreeSMS`, this.agreeSMS);
         // this.router.post(`${this.path}/sendSMS`, this.sendSMS);
         // this.router.patch(`${this.path}/firstLogin`, this.firstLogin);
     }
@@ -468,7 +469,49 @@ class userController {
         }
     }
 
+    // private getPhoneNumber = async (request: Request, response: Response, next: NextFunction) => {
+    //     try {
+    //         // const userId = response.locals.userId
+    //         const userId = '62d2611ce44a2bec67355e05'
     
+    //         const currentUser: any = await User.findOne({ _id: userId })
+    
+    //         const key = process.env.CRYPTO_KEY
+    //         const decode = crypto.createDecipher('des', key)
+    //         const decodeResult =
+    //             decode.update(currentUser.phoneNumber, 'base64', 'utf8') +
+    //             decode.final('utf8')
+    //         // const user_phone_number = decodeResult.split('-').join('') // SMS를 수신할 전화번호
+    
+    //         response.json({
+    //             phoneNumber: decodeResult,
+    //         })
+    //     } catch (error) {
+    //         console.log(error)
+    //         response.json({
+    //             message: '핸드폰 번호 불러오기에 실패하였습니다.',
+    //         })
+    //     }
+    // }
+
+    private agreeSMS = async (request: Request, response: Response, next: NextFunction) => {
+        try {
+            const userId = response.locals.userId
+            const agreeSMS = request.body.agreeSMS
+    
+            await User.updateOne({ _id: userId }, { $set: { agreeSMS } })
+    
+            response.json({
+                message: '문자 수신동의 변경에 성공하였습니다.',
+            })
+        } catch (error) {
+            console.log(error)
+            response.json({
+                message: '문자 수신동의 변경에 실패하였습니다.',
+            })
+        }
+    }
+
 }
 
 export default userController
