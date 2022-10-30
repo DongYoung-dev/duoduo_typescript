@@ -3,8 +3,10 @@ import User from '../schemas/user';
 import RefreshToken from '../schemas/refreshToken';
 import Improvement from '../schemas/improvement';
 import Chatroom from '../schemas/chatroom';
+import Certification from '../schemas/certification';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
+import axios from 'axios';
 
 const tokenExpireTime = process.env.VALID_ACCESS_TOKEN_TIME
 const rtokenExpireTime = process.env.VALID_REFRESH_TOKEN_TIME
@@ -39,7 +41,7 @@ class authController {
         this.router.delete(`${this.path}/logout`, this.logout);
         this.router.delete(`${this.path}/deleteUser`, this.deleteUser);
 
-        // this.router.post(`${this.path}/sendCode`, this.sendVerificationSMS);
+        this.router.post(`${this.path}/sendCode`, this.sendVerificationSMS);
         // this.router.post(`${this.path}/verifyCode`, this.verifyCode);
     }
 
@@ -220,6 +222,85 @@ class authController {
             console.log(error)
             response.json({
                 message: '회원탈퇴에 실패하였습니다.',
+            })
+        }
+    }
+
+    private sendVerificationSMS = async (request: Request, response: Response, next: NextFunction) => {
+        try {
+            const userId = response.locals.userId
+    
+            const phoneNumber = request.body.phoneNumber
+    
+            // const user_phone_number = phoneNumber.split('-').join('') // SMS를 수신할 전화번호
+            const verificationCode =
+                Math.floor(Math.random() * (999999 - 100000)) + 100000 // 인증 코드 (6자리 숫자)
+            const date = Date.now().toString() // 날짜 string
+    
+            // 환경 변수
+            const sens_service_id = process.env.NCP_SENS_ID
+            const sens_access_key = process.env.NCP_SENS_ACCESS
+            const sens_secret_key = process.env.NCP_SENS_SECRET
+            const sens_call_number = process.env.CALLER_NUMBER
+    
+            // url 관련 변수 선언
+            const method = 'POST'
+            const space = ' '
+            const newLine = '\n'
+            const url = `https://sens.apigw.ntruss.com/sms/v2/services/${sens_service_id}/messages`
+            const url2 = `/sms/v2/services/${sens_service_id}/messages`
+    
+            // signature 작성 : crypto-js 모듈을 이용하여 암호화
+            const hmac = CryptoJS.algo.HMAC.create(
+                CryptoJS.algo.SHA256,
+                sens_secret_key!
+            )
+            hmac.update(method)
+            hmac.update(space)
+            hmac.update(url2)
+            hmac.update(newLine)
+            hmac.update(date)
+            hmac.update(newLine)
+            hmac.update(sens_access_key!)
+            const hash = hmac.finalize()
+            const signature = hash.toString(CryptoJS.enc.Base64)
+    
+            // sens 서버로 요청 전송
+            const smsRes = await axios({
+                method: method,
+                url: url,
+                headers: {
+                    'Contenc-type': 'application/json; charset=utf-8',
+                    'x-ncp-iam-access-key': sens_access_key,
+                    'x-ncp-apigw-timestamp': date,
+                    'x-ncp-apigw-signature-v2': signature,
+                },
+                data: {
+                    type: 'SMS',
+                    countryCode: '82',
+                    from: sens_call_number,
+                    content: `듀오해듀오 인증번호는 [${verificationCode}] 입니다.`,
+                    messages: [{ to: `${phoneNumber}` }],
+                },
+            })
+            console.log('response', smsRes.data)
+    
+            const certification = await Certification.findOne({ userId })
+    
+            if (certification) {
+                await Certification.deleteMany({ userId })
+                await Certification.create({ userId, verifyCode: verificationCode })
+            } else {
+                await Certification.create({ userId, verifyCode: verificationCode })
+            }
+    
+            return response.status(200).json({
+                message: '인증번호를 전송하였습니다.',
+            })
+        } catch (err) {
+            console.log(err)
+            response.status(400).json({
+                message: '인증번호 전송을 실패하였습니다.',
             })
         }
     }
