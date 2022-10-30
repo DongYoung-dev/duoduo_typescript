@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction, Router } from 'express';
 import User from '../schemas/user';
 import RefreshToken from '../schemas/refreshToken';
+import Improvement from '../schemas/improvement';
+import Chatroom from '../schemas/chatroom';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
 
@@ -35,7 +37,7 @@ class authController {
         this.router.get(`${this.path}`, this.checkMyInfo);
 
         this.router.delete(`${this.path}/logout`, this.logout);
-        // this.router.delete(`${this.path}/deleteUser`, this.deleteUser);
+        this.router.delete(`${this.path}/deleteUser`, this.deleteUser);
 
         // this.router.post(`${this.path}/sendCode`, this.sendVerificationSMS);
         // this.router.post(`${this.path}/verifyCode`, this.verifyCode);
@@ -188,6 +190,38 @@ class authController {
             .json({
                 message: '로그아웃 되었습니다.',
             })
+    }
+
+    private deleteUser = async (request: Request, response: Response, next: NextFunction) => {
+        const userId = response.locals.userId
+        const improvement = request.body.reason
+    
+        try {
+            if (userId) {
+                if (improvement) {
+                    await Improvement.create({ context: improvement })
+                }
+    
+                await User.deleteOne({ _id: userId })
+                await RefreshToken.deleteOne({ userId })
+                await Chatroom.deleteMany({ userId: { $in: userId } })
+                response.clearCookie('token', COOKIE_OPTIONS)
+                    .clearCookie('refreshToken', COOKIE_OPTIONS)
+                    .status(200)
+                    .json({
+                        message: '회원탈퇴에 성공하였습니다.',
+                    })
+            } else {
+                response.json({
+                    message: '즐',
+                })
+            }
+        } catch (error) {
+            console.log(error)
+            response.json({
+                message: '회원탈퇴에 실패하였습니다.',
+            })
+        }
     }
 
 }
