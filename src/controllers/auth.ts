@@ -32,9 +32,9 @@ class authController {
         // this.router.get(`${this.path}/discord`, this.);
         this.router.get(`${this.path}/discord/callback`, this.discordCallback);
 
-        // this.router.get(`${this.path}`, this.checkMyInfo);
+        this.router.get(`${this.path}`, this.checkMyInfo);
 
-        // this.router.delete(`${this.path}/logout`, this.logout);
+        this.router.delete(`${this.path}/logout`, this.logout);
         // this.router.delete(`${this.path}/deleteUser`, this.deleteUser);
 
         // this.router.post(`${this.path}/sendCode`, this.sendVerificationSMS);
@@ -159,6 +159,35 @@ class authController {
                     })
             }
         )(request, response)
+    }
+
+    private checkMyInfo = async (request: Request, response: Response, next: NextFunction) => {
+        const userId = response.locals.userId
+        const lolNickname = response.locals.lolNickname
+        const profileUrl = response.locals.profileUrl
+        const isOnBoarded = response.locals.isOnBoarded
+        const playStyle = response.locals.playStyle
+        const firstLogin = response.locals.firstLogin
+    
+        response.status(200).json({
+            userId,
+            lolNickname,
+            profileUrl,
+            isOnBoarded,
+            playStyle,
+            firstLogin,
+        })
+    }
+
+    private logout = async (request: Request, response: Response, next: NextFunction) => {
+        const userId = response.locals.userId
+    
+        response.clearCookie('token', COOKIE_OPTIONS)
+            .clearCookie('refreshToken', COOKIE_OPTIONS)
+            .status(200)
+            .json({
+                message: '로그아웃 되었습니다.',
+            })
     }
 
 }
