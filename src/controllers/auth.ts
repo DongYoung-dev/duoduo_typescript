@@ -7,6 +7,7 @@ import Certification from '../schemas/certification';
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
+import crypto from 'crypto-js'
 
 const tokenExpireTime = process.env.VALID_ACCESS_TOKEN_TIME
 const rtokenExpireTime = process.env.VALID_REFRESH_TOKEN_TIME
@@ -304,6 +305,33 @@ class authController {
             })
         }
     }
+
+    // private verifyCode = async (request: Request, response: Response, next: NextFunction) => {
+    //     const userId = response.locals.userId
+    
+    //     const { phoneNumber, code } = request.body
+    
+    //     const dbCode: any = await Certification.findOne({ userId })
+    
+    //     if (code == dbCode.verifyCode) {
+    //         await Certification.deleteMany({ userId })
+    
+    //         const key = process.env.CRYPTO_KEY
+    //         const encrypt = crypto.createCipher('des', key)
+    //         const encryptResult =
+    //             encrypt.update(phoneNumber, 'utf8', 'base64') +
+    //             encrypt.final('base64')
+    
+    //         await User.updateOne(
+    //             { _id: userId },
+    //             { $set: { phoneNumber: encryptResult, agreeSMS: true } }
+    //         )
+    
+    //         return response.status(200).json({ message: '핸드폰 인증 완료.' })
+    //     } else {
+    //         return response.status(400).json({ message: '인증번호가 다릅니다.' })
+    //     }
+    // }
 
 }
 
